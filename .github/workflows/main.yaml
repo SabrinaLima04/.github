@@ -1,1 +1,30 @@
-|
+name: CI/CD Pipeline
+
+on: [push]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalar dependências
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-server
+          pip install mysql-connector-python pytest
+
+      - name: Configurar Banco de Dados
+        run: |
+          sudo service mysql start
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db_alimentos;"
+          mysql -u root db_alimentos < scripts/schema.sql
+
+      - name: Executar testes
+        run: pytest tests/|
