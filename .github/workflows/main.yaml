@@ -1,30 +1,49 @@
-name: CI/CD Pipeline
+name: CI Pipeline Alimentos
 
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
 
 jobs:
-  build-test:
+  build:
+
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: db_alimentos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v3
+    - name: Clonar repositório
+      uses: actions/checkout@v3
 
-      - name: Instalar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Instalar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Instalar dependências
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-server
-          pip install mysql-connector-python pytest
+    - name: Instalar dependências
+      run: |
+        pip install -r requirements.txt
 
-      - name: Configurar Banco de Dados
-        run: |
-          sudo service mysql start
-          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db_alimentos;"
-          mysql -u root db_alimentos < scripts/schema.sql
+    - name: Esperar MySQL iniciar
+      run: sleep 20
 
-      - name: Executar testes
-        run: pytest tests/|
+    - name: Criar tabela
+      run: |
+        mysql -h 127.0.0.1 -u root -proot db_alimentos < script.sql
+
+    - name: Rodar testes
+      run: |
+        pytest
+
